@@ -9,6 +9,8 @@ class SpreadSheet:
 
     def evaluate(self, cell: str) -> int | str:
         value = self._cells.get(cell, '')
+        if value.startswith("'") and value.endswith("'"):
+            return value[1:-1]
         try:
             int_value = int(value)
             return int_value
