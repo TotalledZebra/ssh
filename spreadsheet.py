@@ -18,6 +18,16 @@ class SpreadSheet:
                 result = value[2:-1]
             elif value[1:].isnumeric():
                 result = int(value[1:])
+            elif any(op in value for op in "+-*/"):
+                try:
+                    # Evaluate the arithmetic expression safely
+                    result = eval(value[1:])
+                    if isinstance(result, float) and not result.is_integer():
+                        result = "#Error"
+                    else:
+                        result = int(result)
+                except:
+                    result = "#Error"
             else:
                 ref = value[1:]
                 if ref in self._cells:
