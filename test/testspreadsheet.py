@@ -119,3 +119,30 @@ class TestSpreadSheet(TestCase):
         spreadsheet.set("A1", "=1/0")
 
         self.assertEqual("#Error", spreadsheet.evaluate("A1"))
+
+    def test_valid_arithmetic_operation_with_references(self):
+
+        spreadsheet = SpreadSheet()
+
+        spreadsheet.set("A1", "=1+B1")
+        spreadsheet.set("B1", "3")
+
+        self.assertEqual(4, spreadsheet.evaluate("A1"))
+
+    def test_non_integer_arithmetic_operation_with_references(self):
+
+        spreadsheet = SpreadSheet()
+
+        spreadsheet.set("A1", "=1+B1")
+        spreadsheet.set("B1", "3.1")
+
+        self.assertEqual("#Error", spreadsheet.evaluate("A1"))
+
+    def test_arithmetic_operation_with_circular_reference(self):
+
+        spreadsheet = SpreadSheet()
+
+        spreadsheet.set("A1", "=1+B1")
+        spreadsheet.set("B1", "=A1")
+
+        self.assertEqual("#Circular", spreadsheet.evaluate("A1"))

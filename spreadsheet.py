@@ -1,3 +1,7 @@
+import re
+
+from test_pycosat import evaluate
+
 
 class SpreadSheet:
     def __init__(self):
@@ -8,20 +12,49 @@ class SpreadSheet:
         self._cells[cell] = value
 
     def evaluate(self, cell: str) -> int | str:
-        if cell in self._evaluating:
-            return "#Circular"
-        self._evaluating.add(cell)
-        
+
+        cell_pattern = re.compile("[A-Z]+[1-9]+")
+
         value = self._cells.get(cell, '')
+
+        if cell in value:
+            return "#Circular"
+
+        # Handle formula
         if value.startswith("="):
-            if value.startswith("='") and value.endswith("'"):
-                result = value[2:-1]
-            elif value[1:].isnumeric():
-                result = int(value[1:])
-            elif any(op in value for op in "+-*/"):
+
+            expression = value[1:]
+
+            # Handle strings
+            if value.startswith("'") and value.endswith("'"):
+                result = expression[1:-1]
+
+            # Handle numeric values
+            elif expression.isnumeric():
+                result = int(expression)
+
+            elif any(op in expression for op in "+-*/"):
+
                 try:
-                    # Evaluate the arithmetic expression safely
-                    result = eval(value[1:])
+
+                    # Split the expression into tokens and find any potential circular references
+                    tokens = re.split("[+\\-*/]", expression)
+
+                    for token in tokens:
+                        if cell_pattern.match(token) and cell in self._cells.get(token):
+                            return "#Circular"
+
+                    # AI generated part, replace references with their values
+                    for ref in self._cells:
+                        if ref in expression:
+                            ref_value = self.evaluate(ref)
+                            if isinstance(ref_value, int):
+                                expression = expression.replace(ref, str(ref_value))
+                            else:
+                                return "#Error"
+
+                    result = eval(expression)
+
                     if isinstance(result, float) and not result.is_integer():
                         result = "#Error"
                     else:
@@ -29,7 +62,7 @@ class SpreadSheet:
                 except:
                     result = "#Error"
             else:
-                ref = value[1:]
+                ref = expression
                 if ref in self._cells:
                     result = self.evaluate(ref)
                 else:
@@ -41,7 +74,6 @@ class SpreadSheet:
                 result = int(value)
             except ValueError:
                 result = "#Error"
-        
-        self._evaluating.remove(cell)
+
         return result
 
